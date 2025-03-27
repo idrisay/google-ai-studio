@@ -1,66 +1,29 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getExercises, parseExercise } from "./exercise.js";
+import askAI from "./google_ai.js";
 import fs from "fs";
-import mime from "mime-types";
-import dotenv from "dotenv";
 
-dotenv.config();
+const exercises = await getExercises(1);
 
-const apiKey = process.env.GEMINI_API_KEY;
-const llmModel = process.env.LLM_MODEL;
-const genAI = new GoogleGenerativeAI(apiKey);
-
-const model = genAI.getGenerativeModel({
-  model: llmModel,
+let aiResponses = [];
+exercises.forEach(async (element) => {
+  const parsedExercise = parseExercise(element);
+  console.log(parsedExercise);
+  const aiResponse = await askAI(`
+      I have an exercise and I will share with you, please check it out and let me know if there is any problem about it.
+      Please return reponse in json format like 
+      ***
+      {
+          id: 1,
+          corrrectness: 0.9,
+          suggestion: "You can improve this exercise ...."
+      }
+      ***
+      This is the exercise: ${parseExercise}
+      `);
+  console.log(aiResponse);
+  //   aiResponses = [...aiResponses, aiResponse];
 });
 
-const generationConfig = {
-  temperature: 1,
-  topP: 0.95,
-  topK: 64,
-  maxOutputTokens: 65536,
-  responseModalities: [],
-  responseMimeType: "text/plain",
-};
-
-async function run() {
-  const chatSession = model.startChat({
-    generationConfig,
-    history: [],
-  });
-
-  const result = await chatSession.sendMessage(
-    "Where is the best place to live in Europe?"
-  );
-  // TODO: Following code needs to be updated for client-side apps.
-  const candidates = result.response.candidates;
-  for (
-    let candidate_index = 0;
-    candidate_index < candidates.length;
-    candidate_index++
-  ) {
-    for (
-      let part_index = 0;
-      part_index < candidates[candidate_index].content.parts.length;
-      part_index++
-    ) {
-      const part = candidates[candidate_index].content.parts[part_index];
-      if (part.inlineData) {
-        try {
-          const filename = `output_${candidate_index}_${part_index}.${mime.extension(
-            part.inlineData.mimeType
-          )}`;
-          fs.writeFileSync(
-            filename,
-            Buffer.from(part.inlineData.data, "base64")
-          );
-          console.log(`Output written to: ${filename}`);
-        } catch (err) {
-          console.error(err);
-        }
-      }
-    }
-  }
-  console.log(result.response.text());
-}
-
-run();
+const timestamp = Math.floor(Date.now());
+const filename = `response_${timestamp}.json`;
+fs.writeFileSync(filename, JSON.stringify(aiResponses, null, 2), "utf-8");
