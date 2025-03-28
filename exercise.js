@@ -8,19 +8,24 @@ const connection = await mysql.createConnection({
   database: "staging_2024_12_06", // Replace with your database name
 });
 
-export async function getExercises(number_of_exercises) {
-  console.log(number_of_exercises);
+export async function getExercises(number_of_exercises, starting_id = null) {
   try {
-    // Query to fetch the first 10 exercises
-    const [rows] = await connection.execute(
-      `SELECT * FROM exercises LIMIT ${number_of_exercises}`
-    );
+    let query;
+    let params = [];
 
+    if (starting_id) {
+      query = `SELECT * FROM exercises WHERE public_status = 'publish' AND id >= ? LIMIT ${number_of_exercises}`;
+      params = [starting_id];
+    } else {
+      query = `SELECT * FROM exercises WHERE public_status = 'publish' LIMIT ${number_of_exercises}`;
+    }
+
+    const [rows] = await connection.execute(query, params);
     return rows;
   } catch (error) {
     console.error("Error fetching exercises:", error);
+    throw error;
   } finally {
-    // Close the database connection
     await connection.end();
   }
 }
