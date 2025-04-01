@@ -34,7 +34,7 @@ ${JSON.stringify(parsedExercise, null, 2)}
 export async function processSingleExercise(exercise, index) {
   console.log("App started...");
   await delay(config.delay);
-  console.log("3 seconds later...");
+  console.log(`${config.delay} miliseconds later...`);
   const exerciseId = exercise.id || `exercise_${index}`;
   let parsedExercise;
   let aiResponseString;

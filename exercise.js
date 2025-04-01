@@ -8,17 +8,29 @@ const connection = await mysql.createConnection({
   database: "staging_2024_12_06", // Replace with your database name
 });
 
-export async function getExercises(number_of_exercises, starting_id = null) {
+export async function getExercises(number_of_exercises, processedIds = new Set(), starting_id = null) {
   try {
     let query;
     let params = [];
 
-    if (starting_id) {
-      query = `SELECT * FROM exercises WHERE public_status = 'publish' AND id >= ? LIMIT ${number_of_exercises}`;
-      params = [starting_id];
-    } else {
-      query = `SELECT * FROM exercises WHERE public_status = 'publish' LIMIT ${number_of_exercises}`;
+    // Base query
+    query = `SELECT * FROM exercises WHERE public_status = 'publish'`;
+
+    // Exclude processed IDs
+    if (processedIds.size > 0) {
+      const placeholders = Array.from(processedIds).map(() => "?").join(",");
+      query += ` AND id NOT IN (${placeholders})`;
+      params.push(...processedIds);
     }
+
+    // Add starting ID condition
+    if (starting_id) {
+      query += ` AND id >= ?`;
+      params.push(starting_id);
+    }
+
+    // Add limit
+    query += ` LIMIT ${number_of_exercises}`;
 
     const [rows] = await connection.execute(query, params);
     return rows;

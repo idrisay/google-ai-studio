@@ -1,6 +1,6 @@
 export default {
   exerciseCount: 3,
-  delay: 3000,
+  delay: 300,
   categoryId: 100052,
   concurrencyLimit: 1,
   outputDir: "responses",
