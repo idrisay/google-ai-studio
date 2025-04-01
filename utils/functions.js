@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import ExcelJS from "exceljs";
 import fsPromises from "fs/promises";
-const FIXED_HEADERS = ["id", "correctness", "suggestion", "status"];
+import config from "../utils/config.js";
 
 export const extractJSON = (str) => {
   if (typeof str !== "string" || !str) {
@@ -39,36 +39,46 @@ export const saveLocalFile = async (data, outputDir) => {
 
     if (fileExists) {
       await workbook.xlsx.readFile(filePath);
-      worksheet = workbook.getWorksheet("Feedback") || workbook.addWorksheet("Feedback");
+      worksheet =
+        workbook.getWorksheet("Feedback") || workbook.addWorksheet("Feedback");
     } else {
       worksheet = workbook.addWorksheet("Feedback");
-      worksheet.addRow(FIXED_HEADERS);
+      worksheet.addRow(config.columns);
     }
 
     // Collect existing IDs to avoid duplicates
     const existingIds = new Set();
     worksheet.eachRow((row, rowIndex) => {
       if (rowIndex === 1) return; // skip header
-      const idCell = row.getCell(FIXED_HEADERS.indexOf("id") + 1).value;
+      const idCell = row.getCell(config.columns.indexOf("id") + 1).value;
       if (idCell) existingIds.add(String(idCell));
     });
 
     // Add new rows with correct column mapping
     for (const entry of data) {
       if (!entry.id || existingIds.has(String(entry.id))) continue;
-      const rowData = FIXED_HEADERS.map((header) => entry[header] ?? "");
+
+      // 👉 Inject config.llm_model into the entry if required
+      if (config.columns.includes("llm_model")) {
+        entry.llm_model = config.llm_model;
+      }
+
+      const rowData = config.columns.map((header) => entry[header] ?? "");
       worksheet.addRow(rowData);
     }
 
     await workbook.xlsx.writeFile(filePath);
-    console.log(`✅ Saved to Excel with ${FIXED_HEADERS.length} fixed headers: ${filePath}`);
+    console.log(
+      `✅ Saved to Excel with ${config.columns.length} fixed headers: ${filePath}`
+    );
   } catch (err) {
     console.error("❌ Error saving to Excel:", err);
   }
 };
+
 export async function loadProcessedExerciseIds(filePath) {
   const processedIds = new Set();
-  console.log('filePath', filePath)
+  console.log("filePath", filePath);
 
   try {
     const workbook = new ExcelJS.Workbook();

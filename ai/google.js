@@ -2,11 +2,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from "fs";
 import mime from "mime-types";
 import dotenv from "dotenv";
+import config from "../utils/config.js";
 
 dotenv.config();
 
 const apiKey = process.env.GEMINI_API_KEY;
-const llmModel = process.env.LLM_MODEL;
+const llmModel = config.llm_model;;
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({

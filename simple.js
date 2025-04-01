@@ -1,11 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import fs from "fs";
+import config from "./utils/config.js";
 
 dotenv.config();
 
 const apiKey = process.env.GEMINI_API_KEY;
-const llmModel = process.env.LLM_MODEL;
+const llmModel = config.llm_model;
 
 const ai = new GoogleGenAI({ apiKey });
 
